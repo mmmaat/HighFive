@@ -81,7 +81,7 @@ class Attribute : public Object {
     /// Write a buffer to this attribute
     ///
     template <typename T>
-    void write_raw(const T& buffer);
+    void write_raw(const T* buffer, const DataType& dtype = DataType());
 
   private:
     Attribute() = default;

@@ -81,7 +81,6 @@ inline void Attribute::read(T* array, const DataType& dtype) const {
 
 template <typename T>
 inline void Attribute::write(const T& buffer) {
-    DataSpace space = getSpace();
     DataSpace mem_space = getMemSpace();
     auto converter = make_transform_write(mem_space, buffer);
 
@@ -93,23 +92,14 @@ inline void Attribute::write(const T& buffer) {
         throw DataSpaceException(ss.str());
     }
 
-    if (H5Awrite(getId(), converter._h5_type.getId(),
-                 static_cast<const void*>(converter.get_pointer())) < 0) {
-        HDF5ErrMapper::ToException<DataSetException>(
-            "Error during HDF5 Write: ");
-    }
+    write_raw(converter.get_pointer(), converter._h5_type);
 }
 
 template <typename T>
-inline void Attribute::write_raw(const T& buffer) {
-    using element_type = typename details::data_converter<T>::dataspace_type;
-    DataSpace space = getSpace();
-    DataSpace mem_space = getMemSpace();
-    const DataType mem_datatype = create_and_check_datatype<element_type>();
-    details::data_converter<T> converter(mem_space, mem_space.getDimensions());
+inline void Attribute::write_raw(const T* buffer, const DataType& dtype) {
+    const DataType mem_datatype = dtype.empty() ? create_and_check_datatype<T>() : dtype;
 
-    if (H5Awrite(getId(), mem_datatype.getId(),
-                 static_cast<const void*>(converter.get_pointer(buffer))) < 0) {
+    if (H5Awrite(getId(), mem_datatype.getId(), buffer) < 0) {
         HDF5ErrMapper::ToException<DataSetException>(
             "Error during HDF5 Write: ");
     }
