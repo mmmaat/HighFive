@@ -43,7 +43,7 @@ inline T Reference::dereference(const Object& location) const {
         HDF5ErrMapper::ToException<ReferenceException>(
             "Trying to dereference the wrong type");
     }
-    return obj;
+    return std::move(obj);
 }
 
 inline Object Reference::get_ref(const Object& location) const {
