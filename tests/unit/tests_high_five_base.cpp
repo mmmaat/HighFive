@@ -1415,13 +1415,13 @@ BOOST_AUTO_TEST_CASE(HighFiveFixedString) {
 
     // Create a new file using the default property lists.
     File file(FILE_NAME, File::ReadWrite | File::Create | File::Truncate);
-    std::array<std::string, 2> raw_strings{"abcd", "1234"};
+    std::vector<const char*> raw_strings{"abcd", "1234"};
 
     /// This will not compile - only char arrays - hits static_assert with a nice error
     // file.createDataSet<int[10]>(DS_NAME, DataSpace(2)));
 
     {  // But char should be fine
-        auto ds = file.createDataSet<std::array<char, 10>>("ds1", DataSpace(2));
+        auto ds = file.createDataSet<char[10]>("ds1", DataSpace(2));
         BOOST_CHECK(ds.getDataType().getClass() == DataTypeClass::String);
         ds.write(raw_strings);
     }

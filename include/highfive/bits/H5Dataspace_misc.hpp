@@ -144,7 +144,7 @@ inline bool checkDimensions(const DataSpace& mem_space, size_t input_dims) {
     if (input_dims == dataset_dims)
         return true;
 
-    // From end remove dimensions egal to 1
+    // From end remove dimensions equal to 1
     const std::vector<size_t>& dims = mem_space.getDimensions();
     if (dims.empty())
         return false;
@@ -154,7 +154,7 @@ inline bool checkDimensions(const DataSpace& mem_space, size_t input_dims) {
     if (input_dims == dataset_dims)
         return true;
 
-    // From beginning remove dimensions egal to 1
+    // From beginning remove dimensions equal to 1
     dataset_dims = dims.size();
     for (auto i = dims.cbegin(); i != --dims.cend() && *i == 1; ++i)
         --dataset_dims;

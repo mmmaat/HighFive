@@ -23,7 +23,7 @@ struct data_converter<Eigen::Matrix<T, M, N>> {
     inline data_converter(const DataSpace& space, const std::vector<size_t>& dims)
     : _space(space)
     , _dims(dims)
-    , _number_of_element(std::accumulate(_dims.begin(), _dims.end(), 1UL, std::multiplies<size_t>()))
+    , _number_of_elements(std::accumulate(_dims.begin(), _dims.end(), 1UL, std::multiplies<size_t>()))
     {
         if (_dims.size() > 2) { // Can be vector or matrix
             throw std::string("Invalid number of dimensions for eigen matrix");
@@ -65,13 +65,13 @@ struct data_converter<Eigen::Matrix<T, M, N>> {
 
     const DataSpace& _space;
     std::vector<size_t> _dims;
-    size_t _number_of_element = 2;
+    const size_t _number_of_elements = 2;
 
     static constexpr size_t number_of_dims = 2;
 };
 
-template <typename S, int M, int N>
-struct h5_continuous<Eigen::Matrix<S, M, N>> :
+template <typename T, int M, int N>
+struct h5_continuous<Eigen::Matrix<T, M, N>> :
     std::true_type {};
 
 }  // namespace details

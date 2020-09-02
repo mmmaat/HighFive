@@ -11,11 +11,12 @@
 struct data_converter {
   using value_type;
   using dataspace_type;
+  using h5_type;
+
+  data_converter(const DataSpace& space, const std::vector<size_t>& dims);
 
   // Size for HDF5
   static std::vector<size_t> get_size(const value_type&);
-  // Number of elements for C++
-  static size_t _number_of_element;
 
   // Before reading for creating a type
   void allocate(value_type&) const;
@@ -32,10 +33,10 @@ struct data_converter {
   // After reading non-continuous
   inline void unserialize(value_type&, const dataspace_type*);
 
-  // Use to know how to convert things
-  DataType h5_type;
-
   static constexpr size_t number_of_dims;
+
+  // Number of elements for C++
+  const size_t _number_of_elements;
 };
 */
 
@@ -105,10 +106,6 @@ template <typename T>
 struct h5_continuous<boost::numeric::ublas::matrix<T>> :
     std::integral_constant<bool, h5_pod<T>::value> {};
 
-// template <typename T, int M, int N>
-// struct h5_continuous<Eigen::Matrix<T, M, N>> :
-//     std::true_type {};
-
 template <typename T>
 struct h5_non_continuous :
     std::integral_constant< bool, !h5_continuous<T>::value> {};
@@ -156,7 +153,7 @@ struct data_converter {
     }
 
     const DataSpace& _space;
-    size_t _number_of_element = 1;
+    const size_t _number_of_elements = 1;
 
     static constexpr size_t number_of_dims = 0;
 };
@@ -200,7 +197,7 @@ struct data_converter<std::complex<T>> {
     }
 
     const DataSpace& _space;
-    size_t _number_of_element = 1;
+    const size_t _number_of_elements = 1;
 
     static constexpr size_t number_of_dims = 0;
 };
@@ -244,7 +241,51 @@ struct data_converter<Reference> {
     }
 
     const DataSpace& _space;
-    size_t _number_of_element = 1;
+    const size_t _number_of_elements = 1;
+
+    static constexpr size_t number_of_dims = 0;
+};
+
+template<size_t N>
+struct data_converter<char[N]> {
+    using value_type = char[N];
+    using dataspace_type = char[N];
+    using h5_type = value_type;
+
+    inline data_converter(const DataSpace& space, const std::vector<size_t>& dims)
+      : _space(space)
+    {
+        if (!dims.empty()) {
+            throw std::string("Invalid number of elements for fixed string");
+        }
+    }
+
+    void allocate(value_type&) {
+        // pass
+    }
+
+    static std::vector<size_t> get_size(const value_type& val) {
+        return std::vector<size_t>{};
+    }
+
+    static dataspace_type* get_pointer(value_type& val) {
+        return &val;
+    }
+
+    static const dataspace_type* get_pointer(const value_type& val) {
+        return &val;
+    }
+
+    inline void unserialize(value_type& scalar, const dataspace_type* data) {
+        std::strncpy(scalar, *data, N);
+    }
+
+    inline void serialize(const value_type& scalar, dataspace_type* data) {
+        std::strncpy(*data, scalar, N);
+    }
+
+    const DataSpace& _space;
+    const size_t _number_of_elements = 1;
 
     static constexpr size_t number_of_dims = 0;
 };
@@ -291,7 +332,7 @@ struct data_converter<std::string> {
     }
 
     const DataSpace& _space;
-    size_t _number_of_element = 1;
+    const size_t _number_of_elements = 1;
 
     static constexpr size_t number_of_dims = 0;
 };
@@ -307,7 +348,7 @@ struct data_converter_container_base {
       : _space(space)
       , _dims(dims)
       , _inner_converter(space, std::vector<size_t>(dims.begin() + size, dims.end()))
-      , _number_of_element(_dims[0] * _inner_converter._number_of_element)
+      , _number_of_elements(_dims[0] * _inner_converter._number_of_elements)
     {}
 
     virtual ~data_converter_container_base() = default;
@@ -326,20 +367,20 @@ struct data_converter_container_base {
     // Internal function that take data and put it in vec
     inline void unserialize(value_type& vec, const dataspace_type* data) {
         for (unsigned int i = 0; i < get_total_size(vec); ++i) {
-            _inner_converter.unserialize(get_elem(vec)[i], data + _inner_converter._number_of_element * i); 
+            _inner_converter.unserialize(get_elem(vec)[i], data + _inner_converter._number_of_elements * i); 
         }
     }
 
     inline void serialize(const value_type& scalar, dataspace_type* data) {
          for (size_t i = 0; i < get_total_size(scalar); ++i) {
-             _inner_converter.serialize(get_elem(scalar)[i], data + _inner_converter._number_of_element * i);
+             _inner_converter.serialize(get_elem(scalar)[i], data + _inner_converter._number_of_elements * i);
          }
     }
 
     const DataSpace& _space;
     std::vector<size_t> _dims;
     inner_type _inner_converter;
-    size_t _number_of_element;
+    const size_t _number_of_elements;
 
     static constexpr size_t number_of_dims = size + inner_type::number_of_dims;
 };
@@ -626,7 +667,7 @@ class TransformRead<T, typename std::enable_if<details::h5_non_continuous<T>::va
         , _converter(_space, real_dims(space.getDimensions(), Conv::number_of_dims))
     {
 #ifdef H5_ENABLE_ERROR_ON_COPY
-#error You are using a non continuous data type and so data will be copied
+#error You are using a non contiguous data type and so data will be copied
 #endif
     }
 
@@ -704,7 +745,7 @@ class TransformWrite<T, typename std::enable_if<details::h5_non_continuous<T>::v
         , _converter(space, _dims)
     {
 #ifdef H5_ENABLE_ERROR_ON_COPY
-#error You are using a non continuous data type and so data will be copied
+#error You are using a non contiguous data type and so data will be copied
 #endif
         _vec.resize(details::get_number_of_elements(_dims));
         _converter.serialize(value, _vec.data());

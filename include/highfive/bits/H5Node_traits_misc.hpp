@@ -58,7 +58,7 @@ NodeTraits<Derivate>::createDataSet(const std::string& dataset_name,
                                     const DataSetAccessProps& accessProps)
 {
     return createDataSet(dataset_name, space,
-                         create_and_check_datatype<Type>(),
+                         create_and_check_datatype<typename TransformWrite<Type>::h5_type>(),
                          createProps, accessProps);
 }
 
