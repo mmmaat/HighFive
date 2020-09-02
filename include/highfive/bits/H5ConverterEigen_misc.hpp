@@ -23,6 +23,7 @@ struct data_converter<Eigen::Matrix<T, M, N>> {
     inline data_converter(const DataSpace& space, const std::vector<size_t>& dims)
     : _space(space)
     , _dims(dims)
+    , _number_of_element(std::accumulate(_dims.begin(), _dims.end(), 1UL, std::multiplies<size_t>()))
     {
         if (_dims.size() > 2) { // Can be vector or matrix
             throw std::string("Invalid number of dimensions for eigen matrix");
