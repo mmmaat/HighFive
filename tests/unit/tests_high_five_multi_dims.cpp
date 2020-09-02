@@ -52,7 +52,7 @@ void readWrite2DArrayTest() {
     ContentGenerate<T> generator;
     generate2D(array, x_size, y_size, generator);
 
-    dataset.write_raw(array);
+    dataset.write_raw(&array[0][0]);
 
     auto result = dataset.read<std::vector<std::vector<T>>>();
 

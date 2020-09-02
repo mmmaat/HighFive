@@ -1415,13 +1415,13 @@ BOOST_AUTO_TEST_CASE(HighFiveFixedString) {
 
     // Create a new file using the default property lists.
     File file(FILE_NAME, File::ReadWrite | File::Create | File::Truncate);
-    char raw_strings[][10] = {"abcd", "1234"};
+    std::array<std::string, 2> raw_strings{"abcd", "1234"};
 
     /// This will not compile - only char arrays - hits static_assert with a nice error
     // file.createDataSet<int[10]>(DS_NAME, DataSpace(2)));
 
     {  // But char should be fine
-        auto ds = file.createDataSet<char[10]>("ds1", DataSpace(2));
+        auto ds = file.createDataSet<std::array<char, 10>>("ds1", DataSpace(2));
         BOOST_CHECK(ds.getDataType().getClass() == DataTypeClass::String);
         ds.write(raw_strings);
     }
@@ -1433,14 +1433,8 @@ BOOST_AUTO_TEST_CASE(HighFiveFixedString) {
 
     {  // String Truncate happens low-level if well setup
         auto ds3 = file.createDataSet<char[6]>(
-            "ds3", DataSpace::FromCharArrayStrings(raw_strings));
+            "ds3", DataSpace::From(raw_strings));
         ds3.write(raw_strings);
-    }
-
-    {  // Write as raw elements from pointer (with const)
-        const char(*strings_fixed)[10] = raw_strings;
-        // With a pointer we dont know how many strings -> manual DataSpace
-        file.createDataSet<char[10]>("ds4", DataSpace(2)).write(strings_fixed);
     }
 
     {  // Cant convert flex-length to fixed-length
@@ -1696,10 +1690,9 @@ BOOST_AUTO_TEST_CASE(HighFiveEigen) {
         vec_in.push_back(m2);
         file.createDataSet(DS_NAME + DS_NAME_FLAVOR, vec_in).write(vec_in);
 
-        std::vector<Eigen::MatrixXd> vec_out_exception;
         SilenceHDF5 silencer;
         BOOST_CHECK_THROW(
-            file.getDataSet(DS_NAME + DS_NAME_FLAVOR).read(),
+            file.getDataSet(DS_NAME + DS_NAME_FLAVOR).read<std::vector<Eigen::MatrixXd>>(),
             HighFive::DataSetException);
     }
 
@@ -1758,11 +1751,11 @@ BOOST_AUTO_TEST_CASE(HighFiveEigen) {
         }
 
         file.createDataSet(DS_NAME + DS_NAME_FLAVOR, vec_in).write(vec_in);
-        boost::multi_array<Eigen::MatrixXd, 3> vec_out_exception(boost::extents[3][2][2]);
 
+        using type = boost::multi_array<Eigen::MatrixXd, 3>;
         SilenceHDF5 silencer;
         BOOST_CHECK_THROW(
-            file.getDataSet(DS_NAME + DS_NAME_FLAVOR).read(),
+            file.getDataSet(DS_NAME + DS_NAME_FLAVOR).read<type>(),
             HighFive::DataSetException);
     }
 

@@ -106,10 +106,10 @@ inline void Attribute::write_raw(const T& buffer) {
     DataSpace space = getSpace();
     DataSpace mem_space = getMemSpace();
     const DataType mem_datatype = create_and_check_datatype<element_type>();
-    details::data_converter<T> converter(mem_space);
+    details::data_converter<T> converter(mem_space, mem_space.getDimensions());
 
     if (H5Awrite(getId(), mem_datatype.getId(),
-                 static_cast<const void*>(converter.transform_write(buffer))) < 0) {
+                 static_cast<const void*>(converter.get_pointer(buffer))) < 0) {
         HDF5ErrMapper::ToException<DataSetException>(
             "Error during HDF5 Write: ");
     }

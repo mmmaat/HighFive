@@ -1,4 +1,3 @@
-
 # Define the HighFive INTERFACE library
 add_library(libheaders INTERFACE)
 

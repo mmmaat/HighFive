@@ -1,4 +1,3 @@
-
 #include <iostream>
 
 #include <highfive/H5File.hpp>

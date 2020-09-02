@@ -538,6 +538,36 @@ struct data_converter<boost::numeric::ublas::matrix<T>>: data_converter_containe
 #endif
 }  // namespace details
 
+std::vector<size_t> real_dims(const std::vector<size_t>& from, size_t to_size) {
+    if (from.size() <= to_size) { // We can do nothing
+        return from;
+    }
+
+    auto distance = static_cast<long int>(from.size() - to_size);
+    bool correct = true;
+    for (long int i = 0; i < distance; ++i) {
+        if (from[static_cast<size_t>(i)] != 1) {
+            correct = false;
+            break;
+        }
+    }
+    if (correct) {
+        return std::vector<size_t>(from.begin() + distance, from.end());
+    }
+
+    correct = true;
+    for (long int i = distance; i > 0; --i) {
+        if (from[static_cast<size_t>(i)] != 1) {
+            correct = false;
+            break;
+        }
+    }
+    if (correct) {
+        return std::vector<size_t>(from.begin(), from.end() - distance);
+    }
+    return from;
+}
+
 template <typename T, typename Enable = void>
 class TransformRead;
 
@@ -550,7 +580,7 @@ class TransformRead<T, typename std::enable_if<details::h5_non_continuous<T>::va
 
     TransformRead(const DataSpace& space)
         : _space(space)
-        , _converter(_space, space.getDimensions())
+        , _converter(_space, real_dims(space.getDimensions(), Conv::number_of_dims))
     {
 #ifdef H5_ENABLE_ERROR_ON_COPY
 #error You are using a non continuous data type and so data will be copied
@@ -594,7 +624,7 @@ class TransformRead<T, typename std::enable_if<details::h5_continuous<T>::value>
 
     TransformRead(const DataSpace& space)
         : _space(space)
-        , _converter(_space, space.getDimensions())
+        , _converter(_space, real_dims(space.getDimensions(), Conv::number_of_dims))
     {
     }
 
@@ -627,7 +657,7 @@ class TransformWrite<T, typename std::enable_if<details::h5_non_continuous<T>::v
     using h5_type = typename Conv::h5_type;
 
     TransformWrite(const DataSpace& space, const T& value)
-        : _dims(Conv::get_size(value))
+        : _dims(real_dims(space.getDimensions(), Conv::number_of_dims))
         , _converter(space, _dims)
     {
 #ifdef H5_ENABLE_ERROR_ON_COPY
@@ -658,7 +688,7 @@ class TransformWrite<T, typename std::enable_if<details::h5_continuous<T>::value
     using h5_type = typename Conv::h5_type;
 
     TransformWrite(const DataSpace& space, const T& value)
-        : _dims(Conv::get_size(value))
+        : _dims(real_dims(space.getDimensions(), Conv::number_of_dims))
         , _converter(space, _dims)
         , _data(value)
     {}
