@@ -344,6 +344,49 @@ struct data_converter_container_base {
     static constexpr size_t number_of_dims = size + inner_type::number_of_dims;
 };
 
+template <size_t N>
+struct data_converter<FixedLenStringArray<N>>: public data_converter_container_base<FixedLenStringArray<N>, char, 2> {
+    using parent = data_converter_container_base<FixedLenStringArray<N>, char, 2>;
+    using typename parent::value_type;
+    using typename parent::inner_type;
+    using typename parent::dataspace_type;
+    using typename parent::h5_type;
+
+    inline data_converter(const DataSpace& space, const std::vector<size_t>& dims)
+      : parent(space, dims)
+    {}
+
+    void resize(value_type& val) override {
+        // static type
+    }
+
+    size_t get_total_size(const value_type& val) override {
+        return val.size();
+    }
+
+    char* get_elem(value_type& val) override {
+        return val.data();
+    }
+
+    const char* get_elem(const value_type& val) override {
+        return val.data();
+    }
+
+    static char* get_pointer(value_type& val) {
+        return val.data();
+    }
+
+    static const char* get_pointer(const value_type& val) {
+        return val.data();
+    }
+
+    static std::vector<size_t> get_size(const value_type& val) {
+        auto ret = inner_type::get_size(get_pointer(val)[0]);
+        ret.insert(ret.begin(), val.size());
+        return ret;
+    }
+};
+
 template <typename T>
 struct data_converter<std::vector<T>>: public data_converter_container_base<std::vector<T>, T, 1> {
     using parent = data_converter_container_base<std::vector<T>, T, 1>;
