@@ -26,9 +26,7 @@ int main(void) {
         File file(FILE_NAME, File::ReadWrite | File::Create | File::Truncate);
 
         // Define the size of our dataset: 2x6
-        std::vector<size_t> dims(2);
-        dims[0] = 2;
-        dims[1] = 6;
+        std::vector<size_t> dims{2, 6};
 
         // Create the dataset
         DataSet dataset =
@@ -38,7 +36,7 @@ int main(void) {
                              {11.11, 12.12, 13.13, 14.14, 15.15, 16.16}};
 
         // write it
-        dataset.write(data);
+        dataset.write_raw(&data[0][0]);
 
     } catch (Exception& err) {
         // catch and print any HDF5 error

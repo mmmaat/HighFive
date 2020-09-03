@@ -84,9 +84,9 @@ inline void Attribute::write(const T& buffer) {
     DataSpace mem_space = getMemSpace();
     auto converter = make_transform_write(mem_space, buffer);
 
-    if (!details::checkDimensions(mem_space, converter.number_of_dims)) {
+    if (!details::checkDimensions(mem_space, converter.n_dims)) {
         std::ostringstream ss;
-        ss << "Impossible to write buffer of dimensions " << converter.number_of_dims
+        ss << "Impossible to write buffer of dimensions " << converter.n_dims
            << " into attribute of dimensions "
            << mem_space.getNumberDimensions();
         throw DataSpaceException(ss.str());

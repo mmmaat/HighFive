@@ -14,60 +14,37 @@ namespace HighFive {
 
 namespace details {
 
-template<typename T, int M, int N>
-struct data_converter<Eigen::Matrix<T, M, N>> {
-    using value_type = Eigen::Matrix<T, M, N>;
-    using dataspace_type = T;
-    using h5_type = T;
+template <typename T, int M, int N>
+struct manipulator<Eigen::Matrix<T, M, N>> {
+    using type = Eigen::Matrix<T, M, N>;
+    using value_type = typename type::value_type;
+    using hdf5_type = typename manipulator<value_type>::hdf5_type;
+    using h5_type = typename manipulator<value_type>::h5_type;
 
-    inline data_converter(const DataSpace& space, const std::vector<size_t>& dims)
-    : _space(space)
-    , _dims(dims)
-    , _number_of_elements(std::accumulate(_dims.begin(), _dims.end(), 1UL, std::multiplies<size_t>()))
-    {
-        if (_dims.size() > 2) { // Can be vector or matrix
-            throw std::string("Invalid number of dimensions for eigen matrix");
-        }
-    }
-
-    void allocate(value_type& val) {
-        val.resize(static_cast<typename value_type::Index>(_dims[0]),
-                   static_cast<typename value_type::Index>(_dims.size() > 1 ? _dims[1] : 1));
-    }
-
-    static std::vector<size_t> get_size(const value_type& val) {
+    static std::vector<size_t> size(const type& val) {
         return std::vector<size_t>{static_cast<size_t>(val.rows()), static_cast<size_t>(val.cols())};
     }
 
-    static dataspace_type* get_pointer(value_type& val) {
+    static size_t flat_size(const type& val) {
+        return static_cast<size_t>(val.size());
+    }
+
+    static value_type* data(type& val) {
         return val.data();
     }
 
-    static const dataspace_type* get_pointer(const value_type& val) {
+    static const value_type* data(const type& val) {
         return val.data();
     }
 
-    inline void unserialize(value_type& vec, const dataspace_type* data) {
-        for (unsigned int i = 0; i < vec.rows(); ++i) {
-            for (unsigned int j = 0; j < vec.cols(); ++j) {
-                vec(i, j) = data[i * vec.cols() + j];
-            }
-        }
+    static void resize(type& val, const std::vector<size_t>& count) {
+        assert(count.size() <= n_dims);
+
+        val.resize(static_cast<typename type::Index>(count[0]),
+                   static_cast<typename type::Index>(count.size() > 1 ? count[1] : 1));
     }
 
-    inline void serialize(const value_type& vec, dataspace_type* data) const {
-        for (unsigned int i = 0; i < vec.rows(); ++i) {
-            for (unsigned int j = 0; j < vec.cols(); ++j) {
-                data[i * vec.cols() + j] = vec(i, j);
-            }
-        }
-    }
-
-    const DataSpace& _space;
-    std::vector<size_t> _dims;
-    const size_t _number_of_elements = 2;
-
-    static constexpr size_t number_of_dims = 2;
+    static const size_t n_dims = 2 + manipulator<value_type>::n_dims;
 };
 
 template <typename T, int M, int N>

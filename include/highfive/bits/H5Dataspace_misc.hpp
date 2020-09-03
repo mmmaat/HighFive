@@ -129,7 +129,7 @@ inline std::vector<size_t> DataSpace::getMaxDimensions() const {
 
 template <typename T>
 inline DataSpace DataSpace::From(const T& value) {
-    const auto& dims = details::data_converter<T>::get_size(value);
+    const auto& dims = details::static_data_converter<T>::dims(value);
     if (dims.size() == 0) {
         return DataSpace(DataSpace::datascape_scalar);
     }

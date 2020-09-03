@@ -29,8 +29,8 @@ struct io_impl<T, typename std::enable_if<is_vector<T>::value>::type> {
                                const std::string& path,
                                const T& data,
                                const DumpOptions& options) {
-        using value_type = typename HighFive::details::data_converter<T>::dataspace_type;
-        DataSet dataset = initDataset<value_type>(file, path, HighFive::compute_dims(data), options);
+        using value_type = typename HighFive::details::static_data_converter<T>::hdf5_type;
+        DataSet dataset = initDataset<value_type>(file, path, HighFive::details::static_data_converter<T>::dims(data), options);
         dataset.write(data);
         if (options.flush()) {
             file.flush();
@@ -47,7 +47,7 @@ struct io_impl<T, typename std::enable_if<is_vector<T>::value>::type> {
                                          const std::string& key,
                                          const T& data,
                                          const DumpOptions& options) {
-        using value_type = typename HighFive::details::data_converter<T>::dataspace_type;
+        using value_type = typename HighFive::details::static_data_converter<T>::hdf5_type;
         std::vector<size_t> shape = get_dim_vector(data);
         Attribute attribute = initAttribute<value_type>(file, path, key, shape, options);
         attribute.write(data);
